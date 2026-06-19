@@ -42,6 +42,10 @@ body {
 
 <div class="spacer"></div>
 
+<div id="events"></div>
+
+<div class="spacer"></div>
+
 <div id="quote-block">
   <div class="quote" id="quote"></div>
   <div class="dim" id="author"></div>
@@ -120,6 +124,34 @@ for (var p = 0; p < plines.length; p++) {
 }
 phtml += "<div class='dim' style='margin-top:4px'>\u2014 " + poems[pidx][2] + "</div>";
 document.getElementById("breath").innerHTML = phtml;
+
+// Tomorrow's events — generated daily by ~/bin/kindle-events into events.json.
+var exhr = new XMLHttpRequest();
+exhr.open("GET", "events.json?t=" + now.getTime(), true);
+exhr.onreadystatechange = function() {
+  if (exhr.readyState !== 4) return;
+  var html = "<div class='label'>Tomorrow</div>";
+  if (exhr.status === 200) {
+    try {
+      var ev = JSON.parse(exhr.responseText);
+      html = "<div class='label'>Tomorrow · " + ev.date + "</div>";
+      if (ev.events && ev.events.length) {
+        for (var i = 0; i < ev.events.length; i++) {
+          var e = ev.events[i];
+          html += "<div class='line'><span class='dim'>" + e.time + "</span>  " + e.title + "</div>";
+        }
+      } else {
+        html += "<div class='line dim'>Nothing scheduled</div>";
+      }
+    } catch (err) {
+      html += "<div class='line dim'>—</div>";
+    }
+  } else {
+    html += "<div class='line dim'>—</div>";
+  }
+  document.getElementById("events").innerHTML = html;
+};
+exhr.send();
 
 var xhr = new XMLHttpRequest();
 xhr.open("GET", "https://api.open-meteo.com/v1/forecast?latitude=52.24&longitude=0.24&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation&hourly=precipitation_probability,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,uv_index_max,precipitation_sum,wind_speed_10m_max,wind_direction_10m_dominant&timezone=Europe/London&forecast_days=3", true);
