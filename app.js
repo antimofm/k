@@ -17,6 +17,9 @@ var STYLE =
 ".quote { line-height:1.55; margin-bottom:6px; }" +
 ".weather-grid { margin:6px 0; }" +
 ".weather-grid div { margin-bottom:2px; }" +
+".moon { position:relative; display:inline-block; width:15px; height:15px; border-radius:50%; background:#000; border:1px solid #aaa; overflow:hidden; vertical-align:-2px; }" +
+".mhalf { position:absolute; top:0; width:50%; height:100%; background:#fff; }" +
+".mell { position:absolute; top:0; left:50%; transform:translateX(-50%); height:100%; border-radius:50%; }" +
 "#who { position:absolute; top:8px; right:12px; color:#555; font-size:10px; letter-spacing:2px; text-transform:uppercase; }";
 
 var BODY =
@@ -199,69 +202,82 @@ exhr.onreadystatechange = function() {
 };
 exhr.send();
 
+// Moon phase from the date (no API). Illuminated fraction + 8-phase name, and a
+// CSS-drawn disc (lit limb on the right when waxing — Northern hemisphere).
+function moonInfo(date) {
+  var ref = Date.UTC(2000, 0, 6, 18, 14) / 86400000;
+  var syn = 29.530588853;
+  var age = ((date.getTime() / 86400000 - ref) % syn + syn) % syn;
+  var f = (1 - Math.cos(2 * Math.PI * age / syn)) / 2;     // illuminated fraction 0..1
+  var waxing = age < syn / 2;
+  var name;
+  if (f < 0.02) name = "new moon";
+  else if (f > 0.98) name = "full moon";
+  else if (Math.abs(f - 0.5) <= 0.03) name = waxing ? "first quarter" : "last quarter";
+  else if (f < 0.5) name = waxing ? "waxing crescent" : "waning crescent";
+  else name = waxing ? "waxing gibbous" : "waning gibbous";
+  return { f: f, pct: Math.round(f * 100), waxing: waxing, name: name };
+}
+function moonDisc(m) {
+  var D = 15;
+  var litSide = m.waxing ? "right:0" : "left:0";
+  var ellW = (Math.abs(2 * m.f - 1) * D).toFixed(1);
+  var ellColor = m.f > 0.5 ? "#fff" : "#000";
+  return "<span class='moon'><span class='mhalf' style='" + litSide + "'></span>" +
+         "<span class='mell' style='width:" + ellW + "px;background:" + ellColor + "'></span></span>";
+}
+
 var xhr = new XMLHttpRequest();
-xhr.open("GET", "https://api.open-meteo.com/v1/forecast?latitude=52.24&longitude=0.24&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation&hourly=precipitation_probability,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,uv_index_max,precipitation_sum,wind_speed_10m_max,wind_direction_10m_dominant&timezone=Europe/London&forecast_days=3", true);
+xhr.open("GET", "https://api.open-meteo.com/v1/forecast?latitude=52.24&longitude=0.24&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure&hourly=temperature_2m,precipitation_probability,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant&timezone=Europe/London&forecast_days=4", true);
 xhr.onreadystatechange = function() {
   if (xhr.readyState !== 4 || xhr.status !== 200) return;
   var d = JSON.parse(xhr.responseText);
-  var c = d.current;
-  var daily = d.daily;
-  var hourly = d.hourly;
+  var c = d.current, daily = d.daily, hourly = d.hourly;
 
   var wmoShort = function(code) {
     var m = {0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Freezing fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",71:"Light snow",73:"Snow",75:"Heavy snow",80:"Light showers",81:"Showers",82:"Heavy showers",95:"Thunderstorm"};
     return m[code] || "---";
   };
-
   var windDir = function(deg) {
     var dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
     return dirs[Math.round(deg / 22.5) % 16];
   };
-
-  var beaufort = function(kmh) {
-    if (kmh < 2) return "calm";
-    if (kmh < 6) return "light air";
-    if (kmh < 12) return "light breeze";
-    if (kmh < 20) return "gentle breeze";
-    if (kmh < 29) return "moderate breeze";
-    if (kmh < 39) return "fresh breeze";
-    if (kmh < 50) return "strong breeze";
-    if (kmh < 62) return "near gale";
-    if (kmh < 75) return "gale";
-    if (kmh < 89) return "strong gale";
-    return "storm";
-  };
-
   var pressureDesc = function(hpa) {
-    if (hpa >= 1030) return "high";
-    if (hpa >= 1015) return "steady";
-    if (hpa >= 1000) return "low";
-    return "very low";
+    if (hpa >= 1030) return "high"; if (hpa >= 1015) return "steady";
+    if (hpa >= 1000) return "low"; return "very low";
+  };
+  var dayName = function(iso) {
+    return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(iso + "T12:00").getDay()];
   };
 
-  var currentHour = now.getHours();
-  var todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
-  var rainProbs = [];
-  for (var hh = 0; hh < hourly.time.length && rainProbs.length < 6; hh++) {
-    if (hourly.time[hh] >= todayStr + "T" + String(currentHour).padStart(2,"0")) {
-      rainProbs.push(hourly.precipitation_probability[hh]);
-    }
+  // Tonight: overnight low + a short note, from hourly (now -> ~09:00 tomorrow).
+  var startH = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0") + "T" + String(now.getHours()).padStart(2,"0");
+  var lows = [], maxRain = 0, clearAt = null;
+  for (var i = 0; i < hourly.time.length; i++) {
+    if (hourly.time[i] < startH) continue;
+    var hr = parseInt(hourly.time[i].slice(11,13), 10);
+    var dayPart = hourly.time[i].slice(0,10);
+    var beyond = dayPart > startH.slice(0,10) && hr >= 9;  // stop at ~09:00 next day
+    if (beyond) break;
+    lows.push(hourly.temperature_2m[i]);
+    if (hourly.precipitation_probability[i] > maxRain) maxRain = hourly.precipitation_probability[i];
+    if (clearAt === null && hourly.weather_code[i] <= 1) clearAt = hourly.time[i].slice(11,16);
   }
-  var maxRainProb = Math.max.apply(null, rainProbs.length ? rainProbs : [0]);
+  var lowT = lows.length ? Math.round(Math.min.apply(null, lows)) : Math.round(daily.temperature_2m_min[0]);
+  var tonightNote = maxRain >= 40 ? "rain " + maxRain + "%, easing" : (clearAt ? "clear by " + clearAt : wmoShort(c.weather_code).toLowerCase());
 
-  var sunrise = daily.sunrise[0].split("T")[1];
-  var sunset = daily.sunset[0].split("T")[1];
+  var m = moonInfo(now);
 
-  var wh = "";
-  wh += "LODE  " + Math.round(c.temperature_2m) + "°C  " + wmoShort(c.weather_code) + "  " + Math.round(c.wind_speed_10m) + " km/h";
-  wh += "<br><br>";
-  wh += "<div class='weather-grid'>";
-  wh += "<div>Feels like " + Math.round(c.apparent_temperature) + "°C    Humidity " + c.relative_humidity_2m + "%    Cloud " + c.cloud_cover + "%</div>";
-  wh += "<div>Pressure " + Math.round(c.surface_pressure) + " hPa (" + pressureDesc(c.surface_pressure) + ")    Dew point " + Math.round(c.temperature_2m - ((100 - c.relative_humidity_2m) / 5)) + "°C</div>";
-  wh += "<div>Wind " + windDir(c.wind_direction_10m) + " " + Math.round(c.wind_speed_10m) + " km/h (" + beaufort(c.wind_speed_10m) + ")</div>";
-  wh += "<div>UV " + Math.round(daily.uv_index_max[0]) + "    Rain " + maxRainProb + "% next 6h    Precip " + (c.precipitation > 0 ? c.precipitation + " mm" : "none") + "</div>";
-  wh += "<div>Sunrise " + sunrise + "    Sunset " + sunset + "</div>";
-  wh += "</div>";
+  // two live lines (current conditions; moon disc floated right)
+  var wh = "<div class='line'>LODE  " + Math.round(c.temperature_2m) + "°  " + wmoShort(c.weather_code) +
+       "<span style='float:right'>" + moonDisc(m) + "</span></div>";
+  wh += "<div class='line dim'>feels " + Math.round(c.apparent_temperature) + "°   wind " + windDir(c.wind_direction_10m) + " " + Math.round(c.wind_speed_10m) + " km/h   " + c.relative_humidity_2m + "%   " + Math.round(c.surface_pressure) + " hPa " + pressureDesc(c.surface_pressure) + "</div>";
+  wh += "<div class='spacer' style='height:8px'></div>";
+  // forecast
+  wh += "<div class='line'>Tonight&nbsp;&nbsp;&nbsp;low " + lowT + "°&nbsp;&nbsp;&nbsp;" + tonightNote + "</div>";
+  wh += "<div class='line'>Tomorrow&nbsp;&nbsp;" + Math.round(daily.temperature_2m_max[1]) + "° / " + Math.round(daily.temperature_2m_min[1]) + "°  " + wmoShort(daily.weather_code[1]) + "   rain " + daily.precipitation_probability_max[1] + "%   " + windDir(daily.wind_direction_10m_dominant[1]) + " " + Math.round(daily.wind_speed_10m_max[1]) + "</div>";
+  wh += "<div class='line dim'>" + dayName(daily.time[2]) + " " + Math.round(daily.temperature_2m_max[2]) + "° " + wmoShort(daily.weather_code[2]).toLowerCase() + "&nbsp;&nbsp;&nbsp;&nbsp;" + dayName(daily.time[3]) + " " + Math.round(daily.temperature_2m_max[3]) + "° " + wmoShort(daily.weather_code[3]).toLowerCase() + "</div>";
+  wh += "<div class='line dim'>Sun ↑ " + daily.sunrise[1].slice(11,16) + "  ↓ " + daily.sunset[1].slice(11,16) + "&nbsp;&nbsp;&nbsp;&nbsp;Moon " + m.name + " · " + m.pct + "%</div>";
 
   document.getElementById("weather").innerHTML = wh;
 };
