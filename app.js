@@ -119,14 +119,22 @@ var poems = [
   ["物言はず主客と白菊花", "No one spoke.\nThe host, the guest,\nthe white chrysanthemum.", "Oshima Ryōta"],
   ["雁行無意下池塘　池塘無心留雁影", "The wild geese do not intend\nto cast their reflection.\nThe water has no mind\nto receive their image.", "Zenrin Kushū"]
 ];
-var pidx = now.getDate() % poems.length;
-var phtml = "<div class='line'>" + poems[pidx][0] + "</div>";
+// Chiara's poems: Japanese haiku removed — Chinese / Zen verses only.
+var chiaraPoems = [
+  ["空山不見人　但聞人語響\n返景入深林　復照青苔上", "Empty mountain, no one in sight—\nonly the echo of voices.\nLight returns to the deep forest\nand shines again on the green moss.", "Wang Wei, 鹿柴"],
+  ["床前明月光　疑是地上霜\n舉頭望明月　低頭思故鄉", "Before my bed, the bright moonlight—\nI take it for frost on the ground.\nI lift my head and gaze at the moon,\nlower it, and think of home.", "Li Bai, Quiet Night Thoughts"],
+  ["兀然無事坐　春來草自生", "Sitting quietly, doing nothing,\nspring comes,\nand the grass grows by itself.", "Zen verse (Zenrinkushū)"],
+  ["雁行無意下池塘　池塘無心留雁影", "The wild geese have no design\nto cast their image down;\nthe pond has no mind\nto hold their passing shadow.", "Zen verse (Zenrinkushū)"]
+];
+var pset = (whoKey === "chiara") ? chiaraPoems : poems;
+var pidx = now.getDate() % pset.length;
+var phtml = "<div class='line'>" + pset[pidx][0] + "</div>";
 phtml += "<div style='height:8px'></div>";
-var plines = poems[pidx][1].split("\n");
+var plines = pset[pidx][1].split("\n");
 for (var p = 0; p < plines.length; p++) {
   phtml += "<div class='line dim'>" + plines[p] + "</div>";
 }
-phtml += "<div class='dim' style='margin-top:4px'>— " + poems[pidx][2] + "</div>";
+phtml += "<div class='dim' style='margin-top:4px'>— " + pset[pidx][2] + "</div>";
 document.getElementById("breath").innerHTML = phtml;
 
 // This room's ambient readings — ambient.json (~/bin/kindle-ambient).
