@@ -122,17 +122,25 @@ var poems = [
   ["物言はず主客と白菊花", "No one spoke.\nThe host, the guest,\nthe white chrysanthemum.", "Oshima Ryōta"],
   ["雁行無意下池塘　池塘無心留雁影", "The wild geese do not intend\nto cast their reflection.\nThe water has no mind\nto receive their image.", "Zenrin Kushū"]
 ];
-// Chiara's poems: Japanese haiku removed — Chinese / Zen verses only.
+// Chiara's poems: English-language only (no foreign-language originals).
+// Format ["", body, author] — empty first element = no original-script line.
 var chiaraPoems = [
-  ["空山不見人　但聞人語響\n返景入深林　復照青苔上", "Empty mountain, no one in sight—\nonly the echo of voices.\nLight returns to the deep forest\nand shines again on the green moss.", "Wang Wei, 鹿柴"],
-  ["床前明月光　疑是地上霜\n舉頭望明月　低頭思故鄉", "Before my bed, the bright moonlight—\nI take it for frost on the ground.\nI lift my head and gaze at the moon,\nlower it, and think of home.", "Li Bai, Quiet Night Thoughts"],
-  ["兀然無事坐　春來草自生", "Sitting quietly, doing nothing,\nspring comes,\nand the grass grows by itself.", "Zen verse (Zenrinkushū)"],
-  ["雁行無意下池塘　池塘無心留雁影", "The wild geese have no design\nto cast their image down;\nthe pond has no mind\nto hold their passing shadow.", "Zen verse (Zenrinkushū)"]
+  ["", "so much depends\nupon\n\na red wheel\nbarrow\n\nglazed with rain\nwater\n\nbeside the white\nchickens", "William Carlos Williams"],
+  ["", "Hold fast to dreams\nFor if dreams die\nLife is a broken-winged bird\nThat cannot fly.", "Langston Hughes, Dreams"],
+  ["", "“Hope” is the thing with feathers—\nThat perches in the soul—\nAnd sings the tune without the words—\nAnd never stops—at all—", "Emily Dickinson"],
+  ["", "The way a crow\nShook down on me\nThe dust of snow\nFrom a hemlock tree\n\nHas given my heart\nA change of mood\nAnd saved some part\nOf a day I had rued.", "Robert Frost, Dust of Snow"],
+  ["", "When despair for the world grows in me,\nI come into the peace of wild things…\nFor a time I rest in the grace\nof the world, and am free.", "Wendell Berry, The Peace of Wild Things"],
+  ["", "Who has seen the wind?\nNeither you nor I:\nBut when the trees bow down their heads,\nThe wind is passing by.", "Christina Rossetti"],
+  ["", "I will arise and go now, and go to Innisfree…\nAnd I shall have some peace there, for peace comes dropping slow,\nDropping from the veils of the morning to where the cricket sings.", "W. B. Yeats, The Lake Isle of Innisfree"],
+  ["", "If I can stop one heart from breaking,\nI shall not live in vain;\nIf I can ease one life the aching,\nOr cool one pain…\nI shall not live in vain.", "Emily Dickinson"]
 ];
 var pset = (whoKey === "chiara") ? chiaraPoems : poems;
 var pidx = now.getDate() % pset.length;
-var phtml = "<div class='line'>" + pset[pidx][0] + "</div>";
-phtml += "<div style='height:8px'></div>";
+var phtml = "";
+if (pset[pidx][0]) {
+  phtml += "<div class='line'>" + pset[pidx][0] + "</div>";
+  phtml += "<div style='height:8px'></div>";
+}
 var plines = pset[pidx][1].split("\n");
 for (var p = 0; p < plines.length; p++) {
   phtml += "<div class='line dim'>" + plines[p] + "</div>";
@@ -268,16 +276,16 @@ xhr.onreadystatechange = function() {
 
   var m = moonInfo(now);
 
-  // two live lines (current conditions; moon disc floated right)
+  // two live lines (current conditions; moon disc + phase label floated right)
   var wh = "<div class='line'>LODE  " + Math.round(c.temperature_2m) + "°  " + wmoShort(c.weather_code) +
-       "<span style='float:right'>" + moonDisc(m) + "</span></div>";
+       "<span style='float:right'>" + moonDisc(m) + " <span class='dim'>" + m.name + " · " + m.pct + "%</span></span></div>";
   wh += "<div class='line dim'>feels " + Math.round(c.apparent_temperature) + "°   wind " + windDir(c.wind_direction_10m) + " " + Math.round(c.wind_speed_10m) + " km/h   " + c.relative_humidity_2m + "%   " + Math.round(c.surface_pressure) + " hPa " + pressureDesc(c.surface_pressure) + "</div>";
   wh += "<div class='spacer' style='height:8px'></div>";
   // forecast
   wh += "<div class='line'>Tonight&nbsp;&nbsp;&nbsp;low " + lowT + "°&nbsp;&nbsp;&nbsp;" + tonightNote + "</div>";
   wh += "<div class='line'>Tomorrow&nbsp;&nbsp;" + Math.round(daily.temperature_2m_max[1]) + "° / " + Math.round(daily.temperature_2m_min[1]) + "°  " + wmoShort(daily.weather_code[1]) + "   rain " + daily.precipitation_probability_max[1] + "%   " + windDir(daily.wind_direction_10m_dominant[1]) + " " + Math.round(daily.wind_speed_10m_max[1]) + "</div>";
   wh += "<div class='line dim'>" + dayName(daily.time[2]) + " " + Math.round(daily.temperature_2m_max[2]) + "° " + wmoShort(daily.weather_code[2]).toLowerCase() + "&nbsp;&nbsp;&nbsp;&nbsp;" + dayName(daily.time[3]) + " " + Math.round(daily.temperature_2m_max[3]) + "° " + wmoShort(daily.weather_code[3]).toLowerCase() + "</div>";
-  wh += "<div class='line dim'>Sun ↑ " + daily.sunrise[1].slice(11,16) + "  ↓ " + daily.sunset[1].slice(11,16) + "&nbsp;&nbsp;&nbsp;&nbsp;Moon " + m.name + " · " + m.pct + "%</div>";
+  wh += "<div class='line dim'>Sunrise " + daily.sunrise[1].slice(11,16) + "&nbsp;&nbsp;&nbsp;&nbsp;Sunset " + daily.sunset[1].slice(11,16) + "</div>";
 
   document.getElementById("weather").innerHTML = wh;
 };
