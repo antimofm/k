@@ -4,8 +4,12 @@
 // ambient.json) are fetched relative to THIS script so the /a and /c subpaths
 // still read /k/events.json etc.
 (function () {
-var S = document.currentScript;
-var BASE = S ? S.src.replace(/app\.js(\?.*)?$/, "") : "";
+// Data files (events.json, ambient.json) live at the /k/ level. Derive that
+// base from the path so /k/, /k/a/ and /k/c/ all read the same files —
+// independent of how app.js was loaded (dynamic loader → currentScript is null).
+var p = location.pathname.replace(/index\.html$/, "");
+if (!/\/$/.test(p)) p += "/";
+var BASE = p.replace(/(^|\/)(a|c)\/$/, "/");
 
 var STYLE =
 "* { margin:0; padding:0; box-sizing:border-box; }" +
