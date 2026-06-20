@@ -282,7 +282,7 @@ xhr.onreadystatechange = function() {
 
   // two live lines (current conditions; moon disc + phase label floated right)
   var wh = "<div class='line'>LODE  " + Math.round(c.temperature_2m) + "°  " + wmoShort(c.weather_code) +
-       "<span style='float:right'>" + moonDisc(m) + " <span class='dim'>" + m.name + " · " + m.pct + "%</span></span></div>";
+       "<span style='float:right'><span class='dim'>" + m.name + " · " + m.pct + "%</span> " + moonDisc(m) + "</span></div>";
   wh += "<div class='line dim'>feels " + Math.round(c.apparent_temperature) + "°   wind " + windDir(c.wind_direction_10m) + " " + Math.round(c.wind_speed_10m) + " km/h   " + c.relative_humidity_2m + "%   " + Math.round(c.surface_pressure) + " hPa " + pressureDesc(c.surface_pressure) + "</div>";
   wh += "<div class='spacer' style='height:8px'></div>";
   // forecast
