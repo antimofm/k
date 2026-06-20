@@ -171,16 +171,10 @@ ahxr.onreadystatechange = function() {
   if (a.voc != null) bits.push("VOC " + a.voc);
   if (a.pm25 != null) bits.push("PM2.5 " + a.pm25);
   html += "<div class='line'>" + bits.join("   ") + "</div>";
-  var tail = a.sensor || "";
-  if (a.score != null) tail += " " + a.score;
-  html += "<div class='line dim'>" + tail + "</div>";
   if (a.humidifier) {
     var h = a.humidifier;
-    var hl = "Humidifier " + (h.rh != null ? h.rh + "%" : "?");
-    if (h.target != null) hl += " → " + h.target + "%";
-    if (h.mode) hl += " · " + h.mode;
-    if (h.water_low) hl += "  ⚠ refill";
-    html += "<div class='line dim'>" + hl + "</div>";
+    var state = h.water_low ? "Tank empty" : (h.on ? "On" : "Off");
+    html += "<div class='line dim'>Humidifier " + state + "</div>";
   }
   box.innerHTML = html;
 };
@@ -275,21 +269,31 @@ xhr.onreadystatechange = function() {
     if (hourly.precipitation_probability[i] > maxRain) maxRain = hourly.precipitation_probability[i];
     if (clearAt === null && hourly.weather_code[i] <= 1) clearAt = hourly.time[i].slice(11,16);
   }
-  var lowT = lows.length ? Math.round(Math.min.apply(null, lows)) : Math.round(daily.temperature_2m_min[0]);
-  var tonightNote = maxRain >= 40 ? "rain " + maxRain + "%, easing" : (clearAt ? "clear by " + clearAt : wmoShort(c.weather_code).toLowerCase());
+  var tonightMin = lows.length ? Math.min.apply(null, lows) : daily.temperature_2m_min[0];
+  var tonightMax = lows.length ? Math.max.apply(null, lows) : daily.temperature_2m_max[0];
+  var tonightNote = maxRain >= 40 ? "rain " + maxRain + "%, easing" : (clearAt ? "clear by " + clearAt : wmoShort(c.weather_code));
 
   var m = moonInfo(now);
 
-  // two live lines (current conditions; moon disc + phase label floated right)
+  // One day per line, consistent min°-max°, all same colour. Label padded for alignment.
+  var fline = function(label, mn, mx, desc) {
+    var L = label; while (L.length < 9) L += " ";
+    return "<div class='line' style='white-space:pre'>" + L + Math.round(mn) + "°-" + Math.round(mx) + "°   " + desc + "</div>";
+  };
+  var fday = function(i) {
+    return fline(dayName(daily.time[i]), daily.temperature_2m_min[i], daily.temperature_2m_max[i],
+                 wmoShort(daily.weather_code[i]) + " · rain " + daily.precipitation_probability_max[i] + "%");
+  };
+
   var wh = "<div class='line'>LODE  " + Math.round(c.temperature_2m) + "°  " + wmoShort(c.weather_code) +
-       "<span style='float:right'><span class='dim'>" + m.name + " · " + m.pct + "%</span> " + moonDisc(m) + "</span></div>";
-  wh += "<div class='line dim'>feels " + Math.round(c.apparent_temperature) + "°   wind " + windDir(c.wind_direction_10m) + " " + Math.round(c.wind_speed_10m) + " km/h   " + c.relative_humidity_2m + "%   " + Math.round(c.surface_pressure) + " hPa " + pressureDesc(c.surface_pressure) + "</div>";
+       "<span style='float:right'><span class='dim'>" + m.name + "</span> " + moonDisc(m) + "</span></div>";
   wh += "<div class='spacer' style='height:8px'></div>";
-  // forecast
-  wh += "<div class='line'>Tonight&nbsp;&nbsp;&nbsp;low " + lowT + "°&nbsp;&nbsp;&nbsp;" + tonightNote + "</div>";
-  wh += "<div class='line'>Tomorrow&nbsp;&nbsp;" + Math.round(daily.temperature_2m_max[1]) + "° / " + Math.round(daily.temperature_2m_min[1]) + "°  " + wmoShort(daily.weather_code[1]) + "   rain " + daily.precipitation_probability_max[1] + "%   " + windDir(daily.wind_direction_10m_dominant[1]) + " " + Math.round(daily.wind_speed_10m_max[1]) + "</div>";
-  wh += "<div class='line dim'>" + dayName(daily.time[2]) + " " + Math.round(daily.temperature_2m_max[2]) + "° " + wmoShort(daily.weather_code[2]).toLowerCase() + "&nbsp;&nbsp;&nbsp;&nbsp;" + dayName(daily.time[3]) + " " + Math.round(daily.temperature_2m_max[3]) + "° " + wmoShort(daily.weather_code[3]).toLowerCase() + "</div>";
-  wh += "<div class='line dim'>Sunrise " + daily.sunrise[1].slice(11,16) + "&nbsp;&nbsp;&nbsp;&nbsp;Sunset " + daily.sunset[1].slice(11,16) + "</div>";
+  wh += fline("Tonight", tonightMin, tonightMax, tonightNote);
+  wh += fline("Tomorrow", daily.temperature_2m_min[1], daily.temperature_2m_max[1],
+              wmoShort(daily.weather_code[1]) + " · rain " + daily.precipitation_probability_max[1] + "%");
+  wh += fday(2);
+  wh += fday(3);
+  wh += "<div class='line dim'>Sunrise " + daily.sunrise[1].slice(11,16) + "    Sunset " + daily.sunset[1].slice(11,16) + "</div>";
 
   document.getElementById("weather").innerHTML = wh;
 };
