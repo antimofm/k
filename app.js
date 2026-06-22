@@ -24,7 +24,8 @@ var STYLE =
 ".moon { position:relative; display:inline-block; width:15px; height:15px; border-radius:50%; background:#000; border:1px solid #aaa; overflow:hidden; vertical-align:-2px; }" +
 ".mhalf { position:absolute; top:0; width:50%; height:100%; background:#fff; }" +
 ".mell { position:absolute; top:0; left:50%; transform:translateX(-50%); height:100%; border-radius:50%; }" +
-"#who { position:absolute; top:8px; right:12px; color:#555; font-size:10px; letter-spacing:2px; text-transform:uppercase; }";
+"#who { position:absolute; top:8px; right:10px; }" +
+"#who a { display:inline-block; color:#aaa; text-decoration:none; font-size:12px; letter-spacing:1px; border:1px solid #555; border-radius:13px; padding:5px 12px; }";
 
 var BODY =
 '<div id="who"></div>' +
@@ -47,7 +48,10 @@ document.body.innerHTML = BODY;
 var whoMap = { antimo: "Antimo", chiara: "Chiara" };
 var raw = (window.WHO || (location.search.match(/[?&]who=([^&]+)/) || [])[1] || "antimo").toLowerCase();
 var whoKey = whoMap[raw] ? raw : "antimo";
-document.getElementById("who").textContent = whoMap[whoKey];
+// Corner pill → switch to the other dashboard (shows the destination).
+var other = whoKey === "antimo" ? "chiara" : "antimo";
+var otherPath = BASE + (other === "antimo" ? "a/" : "c/");
+document.getElementById("who").innerHTML = "<a href='" + otherPath + "'>⇄ " + whoMap[other] + "</a>";
 
 var now = new Date();
 var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
