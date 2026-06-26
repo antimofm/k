@@ -1,20 +1,20 @@
 {
-  "generated": "2026-06-26 05:00",
+  "generated": "2026-06-26 05:15",
   "rooms": {
     "antimo": {
       "room": "Rhea's bedroom",
       "sensor": "Awair",
-      "temp": 27,
+      "temp": 28,
       "rh": 54,
-      "co2": 618,
-      "voc": 723,
+      "co2": 788,
+      "voc": 866,
       "pm25": 6,
-      "score": 82,
-      "age_min": 10,
+      "score": 76,
+      "age_min": 5,
       "humidifier": {
         "on": false,
         "water_low": true,
-        "rh": 56,
+        "rh": 59,
         "target": 60,
         "mode": "auto",
         "mist": 2
@@ -25,11 +25,11 @@
       "sensor": "Vindstyrka",
       "temp": 29,
       "rh": 62,
-      "voc": 156,
+      "voc": 161,
       "pm25": 10,
-      "age_min": 10,
+      "age_min": 5,
       "humidifier": {
-        "on": true,
+        "on": false,
         "water_low": false,
         "rh": 58,
         "target": 60,
