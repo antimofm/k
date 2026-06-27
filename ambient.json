@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-27 07:00",
+  "generated": "2026-06-27 07:15",
   "rooms": {
     "antimo": {
       "room": "Rhea's bedroom",
@@ -10,7 +10,7 @@
       "voc": 1824,
       "pm25": 9,
       "score": 43,
-      "age_min": 60,
+      "age_min": 75,
       "humidifier": {
         "on": false,
         "water_low": false,
@@ -27,7 +27,7 @@
       "rh": 59,
       "voc": 154,
       "pm25": 10,
-      "age_min": 60,
+      "age_min": 75,
       "humidifier": {
         "on": false,
         "water_low": false,
