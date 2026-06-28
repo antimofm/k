@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-28 03:45",
+  "generated": "2026-06-28 04:00",
   "rooms": {
     "antimo": {
       "room": "Rhea's bedroom",
@@ -10,14 +10,14 @@
       "voc": 342,
       "pm25": 3,
       "score": 98,
-      "age_min": 5,
+      "age_min": 20,
       "humidifier": {
         "on": true,
         "water_low": false,
-        "rh": 49,
-        "target": 60,
-        "mode": "auto",
-        "mist": 2
+        "rh": null,
+        "target": null,
+        "mode": null,
+        "mist": null
       }
     },
     "chiara": {
@@ -27,7 +27,7 @@
       "rh": 52,
       "voc": 61,
       "pm25": 3,
-      "age_min": 5,
+      "age_min": 20,
       "humidifier": {
         "on": false,
         "water_low": false,
